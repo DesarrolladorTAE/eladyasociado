@@ -10,12 +10,15 @@ const AltaIMSS = () => {
     handleSubmit,
     reset,
     formState: { errors }
-  } = useForm();
+  } = useForm({
+    defaultValues: {
+      periodoPago: "Quincenal" // puedes cambiar el valor por defecto si gustas
+    }
+  });
 
   const [errorMsg, setErrorMsg] = useState(null);
 
   const onSubmit = async (data) => {
-    // Puedes agregar aquí un campo telefono si lo necesitas en el form
     const messageLines = [
       `NOMBRE DE LA EMPRESA: ${data.empresa || "-"}`,
       `NOMBRE COMPLETO: ${data.nombre || "-"}`,
@@ -29,15 +32,15 @@ const AltaIMSS = () => {
       `SUELDO: ${data.sueldo || "-"}`,
       `SALARIO DIARIO: ${data.salarioDiario || "-"}`,
       `LUGAR DE NACIMIENTO: ${data.lugarNacimiento || "-"}`,
+      `PERIODO DE PAGO: ${data.periodoPago || "-"}`, // ⬅️ NUEVO
       `DÍA DE DESCANSO: ${data.descanso || "-"}`,
       `INFONAVIT: ${data.infonavit || "-"}`,
       `INE: ${data.ineFile && data.ineFile.length ? data.ineFile[0].name : "No adjunto"}`,
       `CURP: ${data.curpFile && data.curpFile.length ? data.curpFile[0].name : "No adjunto"}`,
       `CONSTANCIA FISCAL: ${data.constanciaFiscalFile && data.constanciaFiscalFile.length ? data.constanciaFiscalFile[0].name : "No adjunto"}`,
     ];
-    const formData = new FormData();
 
-    // Campos de texto
+    const formData = new FormData();
     formData.append("nombre", data.nombre || "-");
     formData.append("correo", data.email || "-");
     formData.append("mensaje", messageLines.join("\n"));
@@ -46,7 +49,6 @@ const AltaIMSS = () => {
     formData.append("pagina", "ALTA EN EL IMSS TAE");
     formData.append("telefono", "");
 
-    // Archivos (usar el nombre asociativo)
     if (data.ineFile && data.ineFile.length) {
       formData.append("archivo[ineFile]", data.ineFile[0]);
     }
@@ -83,7 +85,7 @@ const AltaIMSS = () => {
       <div
         style={{
           width: "100%",
-          minHeight: 260, // Más alto, puedes subir a 300 si quieres más espacio
+          minHeight: 260,
           background: `linear-gradient(rgba(17,49,89,0.6), rgba(17,49,89,0.5)), url(${imssHeader}) center/cover`,
           display: "flex",
           flexDirection: "column",
@@ -92,7 +94,7 @@ const AltaIMSS = () => {
           color: "#fff",
           marginBottom: 24,
           borderRadius: "0 0 18px 18px",
-          paddingTop: 110, // Sube este valor para más espacio arriba
+          paddingTop: 110,
         }}
       >
         <h1 style={{
@@ -114,7 +116,6 @@ const AltaIMSS = () => {
         </p>
       </div>
 
-
       <div style={{ maxWidth: 850, margin: "0 auto", padding: 32 }}>
         <h4 className="text-center fw-bold mb-4" style={{ letterSpacing: 1 }}>
           Nos llegará un correo con tu información
@@ -124,6 +125,7 @@ const AltaIMSS = () => {
             <pre style={{ whiteSpace: "pre-wrap" }}>{errorMsg}</pre>
           </div>
         )}
+
         <Form onSubmit={handleSubmit(onSubmit)}>
           {/* Nombre de empresa */}
           <Form.Group className="mb-3">
@@ -159,7 +161,7 @@ const AltaIMSS = () => {
           {/* No. de clínica */}
           <Form.Group className="mb-3">
             <Form.Label>N° DE CLÍNICA</Form.Label>
-            <Form.Control {...register("clinica")} placeholder="" />
+            <Form.Control {...register("clinica")} />
           </Form.Group>
 
           {/* CURP */}
@@ -248,6 +250,7 @@ const AltaIMSS = () => {
             <Form.Label>SUELDO</Form.Label>
             <Form.Control {...register("sueldo")} placeholder="$$$$$" />
           </Form.Group>
+
           {/* Salario diario */}
           <Form.Group className="mb-3">
             <Form.Label>SALARIO DIARIO</Form.Label>
@@ -258,6 +261,21 @@ const AltaIMSS = () => {
           <Form.Group className="mb-3">
             <Form.Label>LUGAR DE NACIMIENTO</Form.Label>
             <Form.Control {...register("lugarNacimiento")} placeholder="Estado y ciudad en que nació" />
+          </Form.Group>
+
+          {/* ✅ Periodo de pago (select) */}
+          <Form.Group className="mb-3">
+            <Form.Label>PERIODO DE PAGO *</Form.Label>
+            <Form.Select
+              {...register("periodoPago", { required: "Campo obligatorio" })}
+              aria-label="Selecciona el periodo de pago"
+            >
+              <option value="Semanal">Semanal</option>
+              <option value="Quincenal">Quincenal</option>
+              <option value="Mensual">Mensual</option>
+              <option value="Anual">Anual</option>
+            </Form.Select>
+            {errors.periodoPago && <span className="text-danger">{errors.periodoPago.message}</span>}
           </Form.Group>
 
           {/* Día de descanso */}
@@ -304,8 +322,9 @@ const AltaIMSS = () => {
           <Form.Group className="mb-3">
             <Form.Label>ADJUNTAR CONSTANCIA DE SITUACIÓN FISCAL</Form.Label>
             <Form.Control type="file" accept=".pdf" {...register("constanciaFiscalFile")} />
-            <small>añade tu constancia de situación fiscal (pdf)</small>
+            <small>Añade tu constancia de situación fiscal (PDF)</small>
           </Form.Group>
+
           <Button type="submit" variant="info" className="mt-2 px-4">
             ENVIAR
           </Button>
