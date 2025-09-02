@@ -108,7 +108,7 @@ const LoginContabilidad = () => {
                         {/* FORMULARIO HTML PURO */}
                         <form
                             method="POST"
-                            action="https://mb.p9000/index.php"
+                            action="https://contabilidadelectronica.eladyasociados.com/login"
                             autoComplete="off"
                             ref={formRef}
                         >
