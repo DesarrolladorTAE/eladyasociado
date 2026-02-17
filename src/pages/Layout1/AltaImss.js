@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import axios from "axios";
-import { Button, Form } from "react-bootstrap";
+import { Button, Form, Modal, Spinner, Alert } from "react-bootstrap";
 import imssHeader from "../../assets/images/AltaImss/Fondo.png";
 
 const AltaIMSS = () => {
@@ -12,13 +12,38 @@ const AltaIMSS = () => {
     formState: { errors }
   } = useForm({
     defaultValues: {
-      periodoPago: "Quincenal" // puedes cambiar el valor por defecto si gustas
+      periodoPago: "Quincenal"
     }
   });
 
-  const [errorMsg, setErrorMsg] = useState(null);
+  const destinatarios = useMemo(
+    () => [
+      "cesar.bruno@eladyasociados.com",
+      "christian.najera@eladyasociados.com",
+      "ma.carmen@eladyasociados.com",
+      "gilberto.rodriguez@eladyasociados.com",
+      "adolfo.dominguez@eladyasociados.com",
+      "contacto@eladyasociados.com",
+      // "luis20320993@gmail.com",
+    ],
+    []
+  );
+
+  const [isSending, setIsSending] = useState(false);
+  const [modal, setModal] = useState({
+    show: false,
+    type: "success", // "success" | "error"
+    title: "",
+    message: ""
+  });
+
+  const closeModal = () => setModal((m) => ({ ...m, show: false }));
 
   const onSubmit = async (data) => {
+    if (isSending) return;
+
+    setIsSending(true);
+
     const messageLines = [
       `NOMBRE DE LA EMPRESA: ${data.empresa || "-"}`,
       `NOMBRE COMPLETO: ${data.nombre || "-"}`,
@@ -32,7 +57,7 @@ const AltaIMSS = () => {
       `SUELDO: ${data.sueldo || "-"}`,
       `SALARIO DIARIO: ${data.salarioDiario || "-"}`,
       `LUGAR DE NACIMIENTO: ${data.lugarNacimiento || "-"}`,
-      `PERIODO DE PAGO: ${data.periodoPago || "-"}`, // ⬅️ NUEVO
+      `PERIODO DE PAGO: ${data.periodoPago || "-"}`,
       `DÍA DE DESCANSO: ${data.descanso || "-"}`,
       `INFONAVIT: ${data.infonavit || "-"}`,
       `INE: ${data.ineFile && data.ineFile.length ? data.ineFile[0].name : "No adjunto"}`,
@@ -45,19 +70,17 @@ const AltaIMSS = () => {
     formData.append("correo", data.email || "-");
     formData.append("mensaje", messageLines.join("\n"));
     formData.append("nombreProp", "César Bruno");
-    formData.append("correoProp", "cesar.bruno@eladyasociados.com");
+
+    // ✅ mandar correos como arreglo (correoProp[])
+    destinatarios.forEach((mail) => formData.append("correoProp[]", mail));
+
     formData.append("pagina", "ALTA EN EL IMSS TAE");
     formData.append("telefono", "");
 
-    if (data.ineFile && data.ineFile.length) {
-      formData.append("archivo[ineFile]", data.ineFile[0]);
-    }
-    if (data.curpFile && data.curpFile.length) {
-      formData.append("archivo[curpFile]", data.curpFile[0]);
-    }
-    if (data.constanciaFiscalFile && data.constanciaFiscalFile.length) {
+    if (data.ineFile?.length) formData.append("archivo[ineFile]", data.ineFile[0]);
+    if (data.curpFile?.length) formData.append("archivo[curpFile]", data.curpFile[0]);
+    if (data.constanciaFiscalFile?.length)
       formData.append("archivo[constanciaFiscalFile]", data.constanciaFiscalFile[0]);
-    }
 
     try {
       await axios.post(
@@ -65,23 +88,70 @@ const AltaIMSS = () => {
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
-      alert("✅ Enviado correctamente");
-      setErrorMsg(null);
+
+      setModal({
+        show: true,
+        type: "success",
+        title: "✅ Enviado correctamente",
+        message:
+          "Tu solicitud fue enviada con éxito."
+      });
+
       reset();
     } catch (error) {
-      let backendMsg =
+      const backendMsg =
         error?.response?.data?.message ||
         error?.response?.data?.error ||
         error?.message ||
         "Error desconocido";
-      setErrorMsg(JSON.stringify(backendMsg, null, 2));
+
+      // si viene array/obj, lo mostramos legible
+      const pretty =
+        typeof backendMsg === "string"
+          ? backendMsg
+          : JSON.stringify(backendMsg, null, 2);
+
+      setModal({
+        show: true,
+        type: "error",
+        title: "❌ No se pudo enviar",
+        message: pretty
+      });
+
       console.log("Error completo:", error);
+    } finally {
+      setIsSending(false);
     }
   };
 
   return (
     <>
-      {/* CABECERA CON IMAGEN DE FONDO */}
+      {/* ✅ Modal de resultado */}
+      <Modal show={modal.show} onHide={closeModal} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>{modal.title}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {modal.type === "error" ? (
+            <Alert variant="danger" className="mb-0">
+              <pre style={{ whiteSpace: "pre-wrap", margin: 0 }}>
+                {modal.message}
+              </pre>
+            </Alert>
+          ) : (
+            <Alert variant="success" className="mb-0">
+              {modal.message}
+            </Alert>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant={modal.type === "error" ? "danger" : "success"} onClick={closeModal}>
+            Cerrar
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* CABECERA */}
       <div
         style={{
           width: "100%",
@@ -97,21 +167,25 @@ const AltaIMSS = () => {
           paddingTop: 110,
         }}
       >
-        <h1 style={{
-          fontWeight: 800,
-          fontSize: 36,
-          letterSpacing: 2,
-          textShadow: "0 2px 8px #123"
-        }}>
+        <h1
+          style={{
+            fontWeight: 800,
+            fontSize: 36,
+            letterSpacing: 2,
+            textShadow: "0 2px 8px #123",
+          }}
+        >
           Alta en el IMSS
         </h1>
-        <p style={{
-          fontSize: 20,
-          marginTop: 8,
-          opacity: 0.92,
-          maxWidth: 540,
-          textAlign: "center"
-        }}>
+        <p
+          style={{
+            fontSize: 20,
+            marginTop: 8,
+            opacity: 0.92,
+            maxWidth: 540,
+            textAlign: "center",
+          }}
+        >
           Da de alta fácilmente a tu trabajador ante el IMSS llenando el formulario.
         </p>
       </div>
@@ -120,11 +194,6 @@ const AltaIMSS = () => {
         <h4 className="text-center fw-bold mb-4" style={{ letterSpacing: 1 }}>
           Nos llegará un correo con tu información
         </h4>
-        {errorMsg && (
-          <div className="alert alert-danger" role="alert">
-            <pre style={{ whiteSpace: "pre-wrap" }}>{errorMsg}</pre>
-          </div>
-        )}
 
         <Form onSubmit={handleSubmit(onSubmit)}>
           {/* Nombre de empresa */}
@@ -263,13 +332,10 @@ const AltaIMSS = () => {
             <Form.Control {...register("lugarNacimiento")} placeholder="Estado y ciudad en que nació" />
           </Form.Group>
 
-          {/* ✅ Periodo de pago (select) */}
+          {/* Periodo de pago */}
           <Form.Group className="mb-3">
             <Form.Label>PERIODO DE PAGO *</Form.Label>
-            <Form.Select
-              {...register("periodoPago", { required: "Campo obligatorio" })}
-              aria-label="Selecciona el periodo de pago"
-            >
+            <Form.Select {...register("periodoPago", { required: "Campo obligatorio" })}>
               <option value="Semanal">Semanal</option>
               <option value="Quincenal">Quincenal</option>
               <option value="Mensual">Mensual</option>
@@ -278,7 +344,7 @@ const AltaIMSS = () => {
             {errors.periodoPago && <span className="text-danger">{errors.periodoPago.message}</span>}
           </Form.Group>
 
-          {/* Día de descanso */}
+          {/* Descanso */}
           <Form.Group className="mb-3">
             <Form.Label>DÍA DE DESCANSO *</Form.Label>
             <Form.Control {...register("descanso", { required: true })} />
@@ -289,18 +355,8 @@ const AltaIMSS = () => {
           <Form.Group className="mb-3">
             <Form.Label>¿CUENTA CON CRÉDITO O PRÉSTAMO INFONAVIT?</Form.Label>
             <div>
-              <Form.Check
-                type="radio"
-                label="SI"
-                {...register("infonavit")}
-                value="SI"
-              />
-              <Form.Check
-                type="radio"
-                label="NO"
-                {...register("infonavit")}
-                value="NO"
-              />
+              <Form.Check type="radio" label="SI" {...register("infonavit")} value="SI" />
+              <Form.Check type="radio" label="NO" {...register("infonavit")} value="NO" />
             </div>
           </Form.Group>
 
@@ -325,8 +381,15 @@ const AltaIMSS = () => {
             <small>Añade tu constancia de situación fiscal (PDF)</small>
           </Form.Group>
 
-          <Button type="submit" variant="info" className="mt-2 px-4">
-            ENVIAR
+          <Button type="submit" variant="info" className="mt-2 px-4" disabled={isSending}>
+            {isSending ? (
+              <>
+                <Spinner animation="border" size="sm" className="me-2" />
+                ENVIANDO...
+              </>
+            ) : (
+              "ENVIAR"
+            )}
           </Button>
         </Form>
       </div>
