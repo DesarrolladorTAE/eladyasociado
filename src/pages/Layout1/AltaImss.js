@@ -57,13 +57,13 @@ const AltaIMSS = () => {
 
   const destinatarios = useMemo(
     () => [
-      // "cesar.bruno@eladyasociados.com",
-      // "christian.najera@eladyasociados.com",
-      // "ma.carmen@eladyasociados.com",
-      // "gilberto.rodriguez@eladyasociados.com",
-      // "adolfo.dominguez@eladyasociados.com",
-      // "contacto@eladyasociados.com",
-      "luis20320993@gmail.com",
+      "cesar.bruno@eladyasociados.com",
+      "christian.najera@eladyasociados.com",
+      "ma.carmen@eladyasociados.com",
+      "gilberto.rodriguez@eladyasociados.com",
+      "adolfo.dominguez@eladyasociados.com",
+      "contacto@eladyasociados.com",
+      // "luis20320993@gmail.com",
     ],
     []
   );
