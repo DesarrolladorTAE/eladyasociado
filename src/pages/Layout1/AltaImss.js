@@ -65,7 +65,7 @@ const AltaIMSS = () => {
       "contacto@eladyasociados.com",
       // "luis20320993@gmail.com",
     ],
-    []
+    [],
   );
 
   const [isSending, setIsSending] = useState(false);
@@ -154,7 +154,7 @@ const AltaIMSS = () => {
     if (data.constanciaFiscalFile?.length) {
       formData.append(
         "archivo[constanciaFiscalFile]",
-        data.constanciaFiscalFile[0]
+        data.constanciaFiscalFile[0],
       );
     }
 
@@ -166,7 +166,7 @@ const AltaIMSS = () => {
           headers: {
             "Content-Type": "multipart/form-data",
           },
-        }
+        },
       );
 
       setConfirmOpen(false);
@@ -193,13 +193,19 @@ const AltaIMSS = () => {
     } catch (error) {
       setConfirmOpen(false);
 
+      const data = error?.response?.data;
+
+      console.log(data);
+
       setModal({
         show: true,
         type: "error",
         title: "Error al enviar",
-        message:
-          error?.response?.data?.message ||
-          "No se pudo enviar la solicitud. Inténtalo nuevamente.",
+        message: `
+Mensaje: ${data?.message ?? "Sin mensaje"}
+
+Error: ${data?.error ?? "Sin detalle"}
+`,
       });
     } finally {
       setIsSending(false);
@@ -688,7 +694,10 @@ const AltaIMSS = () => {
       </Box>
 
       {/* MODAL CONFIRMAR */}
-      <Modal open={confirmOpen} onClose={() => !isSending && setConfirmOpen(false)}>
+      <Modal
+        open={confirmOpen}
+        onClose={() => !isSending && setConfirmOpen(false)}
+      >
         <Box
           sx={{
             position: "absolute",
@@ -727,7 +736,10 @@ const AltaIMSS = () => {
               <PreviewRow label="Puesto" value={pendingData?.puesto} />
               <PreviewRow label="NSS" value={pendingData?.nss} />
               <PreviewRow label="Código Postal" value={pendingData?.cp} />
-              <PreviewRow label="Fecha de Alta" value={pendingData?.fechaAlta} />
+              <PreviewRow
+                label="Fecha de Alta"
+                value={pendingData?.fechaAlta}
+              />
               <PreviewRow label="Sueldo" value={pendingData?.sueldo} />
               <PreviewRow
                 label="Salario Diario"
@@ -741,7 +753,10 @@ const AltaIMSS = () => {
                 label="Periodo de Pago"
                 value={pendingData?.periodoPago}
               />
-              <PreviewRow label="Día de descanso" value={pendingData?.descanso} />
+              <PreviewRow
+                label="Día de descanso"
+                value={pendingData?.descanso}
+              />
               <PreviewRow label="INFONAVIT" value={pendingData?.infonavit} />
             </Stack>
 
@@ -768,8 +783,9 @@ const AltaIMSS = () => {
 
               <Chip
                 icon={<CheckCircleRoundedIcon />}
-                label={`Constancia Fiscal: ${files.constanciaFiscalFile?.name || "No adjuntado"
-                  }`}
+                label={`Constancia Fiscal: ${
+                  files.constanciaFiscalFile?.name || "No adjuntado"
+                }`}
                 color={files.constanciaFiscalFile ? "success" : "default"}
                 sx={{ justifyContent: "flex-start" }}
               />
@@ -777,11 +793,7 @@ const AltaIMSS = () => {
 
             <Divider sx={{ my: 3 }} />
 
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={2}
-              mt={4}
-            >
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2} mt={4}>
               <Button
                 fullWidth
                 variant="outlined"
